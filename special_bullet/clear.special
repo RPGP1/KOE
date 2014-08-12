@@ -1,0 +1,51 @@
+#coding: UTF-8
+
+class Clear
+  def initialize(&block)
+    @fiber = Fiber.new(&block)
+  end
+  
+  def old_scene=(v)
+    @battle = v
+  end
+  
+  def draw
+    @fiber.resume(@battle)
+  end
+end
+
+clear = Clear.new do |battle|
+  line = AnimeSprite.new(0,-25)
+  line.z = 10
+  line.animation_image = Loading
+  line.add_animation(:usual, 9, Array.new(10){|i| i})
+  line.start_animation(:usual)
+  
+  black = Image.new(800,600,[0,0,0])
+  
+  back = AfterClear
+  
+  shader = TransitionShader.new(600, Rule, 0)
+  
+  825.times do |i|
+    shader.frame_count = 600 - i.within(0,800)
+    line.y = -25 + i
+    
+    battle.draw
+    Window.draw_shader(0,0,back,shader,10)
+    line.draw
+    Fiber.yield
+  end
+  
+  font = Font.new(12)
+  str = "Push any key to exit..."
+  str_w = font.getWidth(str)
+  
+  loop do
+    exit if !(Input.keys.empty?) || Mouse.left? || Mouse.right?
+    Window.drawFont(797-str_w,585,str,font)
+    Fiber.yield
+  end
+end
+
+KOE.change_scene(clear)
